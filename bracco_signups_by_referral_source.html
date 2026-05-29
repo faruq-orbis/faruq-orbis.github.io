@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bracco Signups by Referral Source — Last 30 Days</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f12; color: #e2e8f0; min-height: 100vh; }
+  .header { padding: 28px 32px 20px; border-bottom: 1px solid #1e2030; }
+  .header h1 { font-size: 20px; font-weight: 600; color: #f1f5f9; }
+  .header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .summary { display: flex; gap: 16px; padding: 20px 32px; flex-wrap: wrap; }
+  .stat { background: #161820; border: 1px solid #1e2030; border-radius: 8px; padding: 16px 20px; flex: 1; min-width: 140px; }
+  .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; margin-bottom: 6px; }
+  .stat .value { font-size: 26px; font-weight: 700; color: #f1f5f9; }
+  .stat .sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+  .chart-section { padding: 0 32px 24px; }
+  .chart-wrap { background: #161820; border: 1px solid #1e2030; border-radius: 10px; padding: 20px; }
+  .chart-wrap h2 { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 16px; }
+  .chart-container { position: relative; height: 320px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .filters { display: flex; gap: 10px; padding: 0 32px 20px; flex-wrap: wrap; }
+  .filter-btn { display: flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 6px; border: 1px solid #1e2030; background: #161820; color: #94a3b8; font-size: 12px; cursor: pointer; user-select: none; transition: all .15s; }
+  .filter-btn:hover { border-color: #334155; color: #e2e8f0; }
+  .filter-btn.active { border-color: #6366f1; color: #e2e8f0; background: #1e1f35; }
+  .filter-btn .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .filter-btn .check { font-size: 11px; color: #6366f1; margin-left: 2px; opacity: 0; transition: opacity .15s; }
+  .filter-btn.active .check { opacity: 1; }
+  .days { padding: 0 32px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .day-card { background: #161820; border: 1px solid #1e2030; border-radius: 8px; padding: 16px; }
+  .day-card .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .day-card .day-title { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+  .day-card .day-total { font-size: 13px; font-weight: 700; color: #6366f1; }
+  .source-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #1e2030; }
+  .source-row:last-child { border-bottom: none; }
+  .source-name { font-size: 12px; color: #94a3b8; }
+  .source-name .channel-tag { font-size: 10px; color: #475569; margin-left: 4px; }
+  .source-count { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+  .source-bar-wrap { width: 60px; height: 4px; background: #1e2030; border-radius: 2px; margin: 0 8px; }
+  .source-bar { height: 4px; border-radius: 2px; background: #6366f1; }
+  .note { font-size: 11px; color: #475569; padding: 0 32px 32px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Bracco Signups by Referral Source</h1>
+  <p>Last 30 days · Source: BigQuery <code>bracco-warehouse.pwallet.customer_edt</code> · Field: <code>affiliate_username</code></p>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div class="filters" id="filters"></div>
+
+<div class="chart-section">
+  <div class="chart-wrap">
+    <h2>Daily Signups by Referral Source</h2>
+    <div class="chart-container"><canvas id="mainChart"></canvas></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+
+<div class="days" id="days"></div>
+
+<div class="note">
+  <strong>Field mapping:</strong> <code>affiliate_username</code> on <code>customer_edt</code> maps to named affiliate/promo codes (matches PostHog's <code>referral_source</code>).<br>
+  <strong>Direct/Unknown:</strong> Users with <code>acq_channel = '(missing_data)-(direct)'</code> or <code>'(none)-(direct)'</code> — no referral attribution.<br>
+  <strong>Unattributed:</strong> <code>acq_channel = 'Affiliate'</code> but no <code>affiliate_username</code> set — affiliate channel with missing code.<br>
+  <strong>RAF:</strong> Combined Refer-a-Friend signups (<code>acq_channel = 'Referred'</code> and <code>acq_channel = 'Affiliate'</code> with username <code>'RAF'</code>).<br>
+  May 29 is a partial day (data as of query time).
+</div>
+
+<script>
+const RAW = [
+  { date:"2026-04-29", sources:{ "Direct/Unknown":8, "GrowthLeads":1, "BCUS25N":0, "Pikkit":0, "SAUSBRACCO":3, "RAF":4, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":0, "billharrelson":0, "Unattributed":1, "Other":4 } },
+  { date:"2026-04-30", sources:{ "Direct/Unknown":43, "GrowthLeads":5, "BCUS25N":5, "Pikkit":0, "SAUSBRACCO":12, "RAF":3, "Chillybets":0, "JDGoldboys":9, "tyvanklinger":8, "billharrelson":0, "Unattributed":15, "Other":16 } },
+  { date:"2026-05-01", sources:{ "Direct/Unknown":61, "GrowthLeads":4, "BCUS25N":7, "Pikkit":12, "SAUSBRACCO":6, "RAF":4, "Chillybets":0, "JDGoldboys":15, "tyvanklinger":14, "billharrelson":0, "Unattributed":15, "Other":12 } },
+  { date:"2026-05-02", sources:{ "Direct/Unknown":34, "GrowthLeads":7, "BCUS25N":7, "Pikkit":19, "SAUSBRACCO":1, "RAF":9, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":9, "billharrelson":0, "Unattributed":27, "Other":14 } },
+  { date:"2026-05-03", sources:{ "Direct/Unknown":26, "GrowthLeads":5, "BCUS25N":6, "Pikkit":13, "SAUSBRACCO":7, "RAF":4, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":3, "billharrelson":0, "Unattributed":19, "Other":10 } },
+  { date:"2026-05-04", sources:{ "Direct/Unknown":39, "GrowthLeads":9, "BCUS25N":6, "Pikkit":22, "SAUSBRACCO":5, "RAF":7, "Chillybets":0, "JDGoldboys":1, "tyvanklinger":3, "billharrelson":0, "Unattributed":20, "Other":8 } },
+  { date:"2026-05-05", sources:{ "Direct/Unknown":55, "GrowthLeads":7, "BCUS25N":4, "Pikkit":24, "SAUSBRACCO":2, "RAF":12, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":5, "billharrelson":10, "Unattributed":15, "Other":44 } },
+  { date:"2026-05-06", sources:{ "Direct/Unknown":55, "GrowthLeads":6, "BCUS25N":4, "Pikkit":19, "SAUSBRACCO":4, "RAF":19, "Chillybets":0, "JDGoldboys":21, "tyvanklinger":12, "billharrelson":12, "Unattributed":13, "Other":36 } },
+  { date:"2026-05-07", sources:{ "Direct/Unknown":63, "GrowthLeads":5, "BCUS25N":6, "Pikkit":23, "SAUSBRACCO":15, "RAF":8, "Chillybets":0, "JDGoldboys":3, "tyvanklinger":2, "billharrelson":11, "Unattributed":14, "Other":6 } },
+  { date:"2026-05-08", sources:{ "Direct/Unknown":54, "GrowthLeads":2, "BCUS25N":7, "Pikkit":12, "SAUSBRACCO":9, "RAF":15, "Chillybets":0, "JDGoldboys":9, "tyvanklinger":4, "billharrelson":5, "Unattributed":17, "Other":48 } },
+  { date:"2026-05-09", sources:{ "Direct/Unknown":50, "GrowthLeads":9, "BCUS25N":7, "Pikkit":10, "SAUSBRACCO":7, "RAF":9, "Chillybets":0, "JDGoldboys":5, "tyvanklinger":4, "billharrelson":5, "Unattributed":11, "Other":14 } },
+  { date:"2026-05-10", sources:{ "Direct/Unknown":40, "GrowthLeads":5, "BCUS25N":10, "Pikkit":17, "SAUSBRACCO":10, "RAF":9, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":1, "billharrelson":5, "Unattributed":16, "Other":12 } },
+  { date:"2026-05-11", sources:{ "Direct/Unknown":31, "GrowthLeads":9, "BCUS25N":3, "Pikkit":12, "SAUSBRACCO":10, "RAF":11, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":4, "billharrelson":14, "Unattributed":19, "Other":11 } },
+  { date:"2026-05-12", sources:{ "Direct/Unknown":33, "GrowthLeads":7, "BCUS25N":5, "Pikkit":13, "SAUSBRACCO":10, "RAF":30, "Chillybets":0, "JDGoldboys":9, "tyvanklinger":19, "billharrelson":2, "Unattributed":38, "Other":23 } },
+  { date:"2026-05-13", sources:{ "Direct/Unknown":30, "GrowthLeads":5, "BCUS25N":0, "Pikkit":7, "SAUSBRACCO":13, "RAF":17, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":0, "billharrelson":0, "Unattributed":28, "Other":13 } },
+  { date:"2026-05-14", sources:{ "Direct/Unknown":32, "GrowthLeads":2, "BCUS25N":6, "Pikkit":11, "SAUSBRACCO":7, "RAF":18, "Chillybets":0, "JDGoldboys":6, "tyvanklinger":1, "billharrelson":0, "Unattributed":29, "Other":12 } },
+  { date:"2026-05-15", sources:{ "Direct/Unknown":36, "GrowthLeads":28, "BCUS25N":4, "Pikkit":9, "SAUSBRACCO":7, "RAF":15, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":1, "billharrelson":0, "Unattributed":46, "Other":12 } },
+  { date:"2026-05-16", sources:{ "Direct/Unknown":30, "GrowthLeads":53, "BCUS25N":2, "Pikkit":10, "SAUSBRACCO":13, "RAF":14, "Chillybets":0, "JDGoldboys":1, "tyvanklinger":1, "billharrelson":0, "Unattributed":32, "Other":8 } },
+  { date:"2026-05-17", sources:{ "Direct/Unknown":26, "GrowthLeads":46, "BCUS25N":8, "Pikkit":9, "SAUSBRACCO":14, "RAF":15, "Chillybets":0, "JDGoldboys":1, "tyvanklinger":0, "billharrelson":0, "Unattributed":49, "Other":11 } },
+  { date:"2026-05-18", sources:{ "Direct/Unknown":42, "GrowthLeads":34, "BCUS25N":3, "Pikkit":6, "SAUSBRACCO":14, "RAF":45, "Chillybets":0, "JDGoldboys":7, "tyvanklinger":1, "billharrelson":0, "Unattributed":36, "Other":14 } },
+  { date:"2026-05-19", sources:{ "Direct/Unknown":34, "GrowthLeads":31, "BCUS25N":5, "Pikkit":8, "SAUSBRACCO":3, "RAF":29, "Chillybets":24, "JDGoldboys":0, "tyvanklinger":0, "billharrelson":0, "Unattributed":26, "Other":9 } },
+  { date:"2026-05-20", sources:{ "Direct/Unknown":31, "GrowthLeads":46, "BCUS25N":3, "Pikkit":11, "SAUSBRACCO":4, "RAF":28, "Chillybets":6, "JDGoldboys":0, "tyvanklinger":0, "billharrelson":0, "Unattributed":21, "Other":5 } },
+  { date:"2026-05-21", sources:{ "Direct/Unknown":81, "GrowthLeads":43, "BCUS25N":6, "Pikkit":15, "SAUSBRACCO":5, "RAF":19, "Chillybets":4, "JDGoldboys":1, "tyvanklinger":1, "billharrelson":0, "Unattributed":27, "Other":9 } },
+  { date:"2026-05-22", sources:{ "Direct/Unknown":95, "GrowthLeads":29, "BCUS25N":9, "Pikkit":8, "SAUSBRACCO":7, "RAF":17, "Chillybets":29, "JDGoldboys":8, "tyvanklinger":1, "billharrelson":0, "Unattributed":17, "Other":16 } },
+  { date:"2026-05-23", sources:{ "Direct/Unknown":93, "GrowthLeads":28, "BCUS25N":5, "Pikkit":8, "SAUSBRACCO":6, "RAF":27, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":0, "billharrelson":0, "Unattributed":22, "Other":9 } },
+  { date:"2026-05-24", sources:{ "Direct/Unknown":102, "GrowthLeads":36, "BCUS25N":7, "Pikkit":13, "SAUSBRACCO":4, "RAF":19, "Chillybets":2, "JDGoldboys":1, "tyvanklinger":0, "billharrelson":0, "Unattributed":28, "Other":7 } },
+  { date:"2026-05-25", sources:{ "Direct/Unknown":81, "GrowthLeads":41, "BCUS25N":8, "Pikkit":10, "SAUSBRACCO":2, "RAF":14, "Chillybets":10, "JDGoldboys":1, "tyvanklinger":0, "billharrelson":0, "Unattributed":29, "Other":8 } },
+  { date:"2026-05-26", sources:{ "Direct/Unknown":107, "GrowthLeads":34, "BCUS25N":12, "Pikkit":15, "SAUSBRACCO":8, "RAF":16, "Chillybets":6, "JDGoldboys":1, "tyvanklinger":0, "billharrelson":0, "Unattributed":32, "Other":10 } },
+  { date:"2026-05-27", sources:{ "Direct/Unknown":187, "GrowthLeads":31, "BCUS25N":22, "Pikkit":12, "SAUSBRACCO":11, "RAF":26, "Chillybets":0, "JDGoldboys":0, "tyvanklinger":1, "billharrelson":0, "Unattributed":23, "Other":14 } },
+  { date:"2026-05-28", sources:{ "Direct/Unknown":219, "GrowthLeads":22, "BCUS25N":33, "Pikkit":13, "SAUSBRACCO":4, "RAF":36, "Chillybets":8, "JDGoldboys":1, "tyvanklinger":2, "billharrelson":0, "Unattributed":18, "Other":16 } },
+  { date:"2026-05-29", sources:{ "Direct/Unknown":76, "GrowthLeads":29, "BCUS25N":21, "Pikkit":6, "SAUSBRACCO":4, "RAF":12, "Chillybets":2, "JDGoldboys":0, "tyvanklinger":1, "billharrelson":0, "Unattributed":10, "Other":5 } },
+];
+
+// Filterable series — can be toggled on/off
+const FILTERABLE = ["Direct/Unknown", "Unattributed", "Other"];
+const hidden = new Set(); // starts empty (all shown)
+
+const SERIES = ["Direct/Unknown","GrowthLeads","BCUS25N","Pikkit","SAUSBRACCO","RAF","Chillybets","JDGoldboys","tyvanklinger","billharrelson","Unattributed","Other"];
+const COLORS = {
+  "Direct/Unknown": "#334155",
+  "GrowthLeads":    "#6366f1",
+  "BCUS25N":        "#f59e0b",
+  "Pikkit":         "#10b981",
+  "SAUSBRACCO":     "#3b82f6",
+  "RAF":            "#8b5cf6",
+  "Chillybets":     "#ef4444",
+  "JDGoldboys":     "#06b6d4",
+  "tyvanklinger":   "#f97316",
+  "billharrelson":  "#ec4899",
+  "Unattributed":   "#64748b",
+  "Other":          "#1e293b",
+};
+
+// Summary stats (always based on full data)
+const allTotalsBase = RAW.map(d => Object.values(d.sources).reduce((a,b)=>a+b,0));
+const grandTotal = allTotalsBase.reduce((a,b)=>a+b,0);
+const avgPerDay = Math.round(grandTotal / RAW.length);
+const affiliateTotals = {};
+SERIES.forEach(s => { affiliateTotals[s] = RAW.reduce((sum,d) => sum+(d.sources[s]||0),0); });
+const topAffiliate = SERIES.filter(s=>!["Direct/Unknown","Unattributed","Other"].includes(s))
+  .sort((a,b)=>affiliateTotals[b]-affiliateTotals[a])[0];
+
+document.getElementById('summary').innerHTML = `
+  <div class="stat"><div class="label">Total Signups</div><div class="value">${grandTotal.toLocaleString()}</div><div class="sub">Apr 29 – May 29</div></div>
+  <div class="stat"><div class="label">Daily Average</div><div class="value">${avgPerDay.toLocaleString()}</div><div class="sub">per day</div></div>
+  <div class="stat"><div class="label">Top Affiliate</div><div class="value" style="font-size:18px">${topAffiliate}</div><div class="sub">${affiliateTotals[topAffiliate]} signups total</div></div>
+  <div class="stat"><div class="label">Peak Day</div><div class="value">${Math.max(...allTotalsBase)}</div><div class="sub">${RAW[allTotalsBase.indexOf(Math.max(...allTotalsBase))].date}</div></div>
+  <div class="stat"><div class="label">Direct/Unknown</div><div class="value">${Math.round(affiliateTotals["Direct/Unknown"]/grandTotal*100)}%</div><div class="sub">${affiliateTotals["Direct/Unknown"].toLocaleString()} users</div></div>
+`;
+
+// Filter buttons
+const filterLabels = { "Direct/Unknown": "Direct / Unknown", "Unattributed": "Unattributed", "Other": "Other" };
+document.getElementById('filters').innerHTML =
+  `<span style="font-size:12px;color:#475569;line-height:32px;margin-right:4px">Hide:</span>` +
+  FILTERABLE.map(s =>
+    `<button class="filter-btn" data-series="${s}" onclick="toggleFilter('${s}')">
+      <span class="dot" style="background:${COLORS[s]}"></span>
+      ${filterLabels[s]}
+      <span class="check">✕</span>
+    </button>`
+  ).join('');
+
+function toggleFilter(s) {
+  if (hidden.has(s)) hidden.delete(s);
+  else hidden.add(s);
+  const btn = document.querySelector(`[data-series="${s}"]`);
+  btn.classList.toggle('active', hidden.has(s));
+  render();
+}
+
+// Chart
+const labels = RAW.map(d => {
+  const dt = new Date(d.date + 'T00:00:00');
+  return dt.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+});
+
+let chartInstance = null;
+
+function visibleSeries() { return SERIES.filter(s => !hidden.has(s)); }
+
+function render() {
+  const vis = visibleSeries();
+
+  // Update chart
+  if (chartInstance) {
+    chartInstance.data.datasets.forEach(ds => {
+      ds.hidden = hidden.has(ds.label);
+    });
+    chartInstance.update();
+  }
+
+  // Update legend
+  document.getElementById('legend').innerHTML = SERIES.map(s =>
+    `<div class="legend-item" style="opacity:${hidden.has(s)?0.3:1}">
+      <div class="legend-dot" style="background:${COLORS[s]}"></div>${s} (${affiliateTotals[s].toLocaleString()})
+    </div>`
+  ).join('');
+
+  // Update day cards
+  document.getElementById('days').innerHTML = RAW.map((d) => {
+    const rowSources = SERIES.filter(s => !hidden.has(s) && (d.sources[s]||0) > 0)
+      .sort((a,b) => (d.sources[b]||0)-(d.sources[a]||0));
+    const total = rowSources.reduce((sum,s) => sum+(d.sources[s]||0), 0);
+    const maxVal = Math.max(...rowSources.map(s => d.sources[s]||0), 1);
+    const dt = new Date(d.date + 'T00:00:00');
+    const dateLabel = dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    const partialNote = d.date === '2026-05-29' ? ' <span style="font-size:10px;color:#475569">(partial)</span>' : '';
+    const rows = rowSources.map(s => {
+      const count = d.sources[s]||0;
+      const pct = total > 0 ? Math.round(count/total*1000)/10 : 0;
+      const barPct = Math.round(count/maxVal*100);
+      return `<div class="source-row">
+        <span class="source-name">${s}</span>
+        <div class="source-bar-wrap"><div class="source-bar" style="width:${barPct}%;background:${COLORS[s]}"></div></div>
+        <span class="source-count">${count} <span style="color:#475569;font-weight:400">(${pct}%)</span></span>
+      </div>`;
+    }).join('');
+    return `<div class="day-card">
+      <div class="day-header">
+        <div class="day-title">${dateLabel}${partialNote}</div>
+        <div class="day-total">${total} signups</div>
+      </div>
+      ${rows || '<div style="font-size:12px;color:#475569;padding:4px 0">No data</div>'}
+    </div>`;
+  }).join('');
+}
+
+// Build chart once
+const datasets = SERIES.map(s => ({
+  label: s,
+  data: RAW.map(d => d.sources[s]||0),
+  backgroundColor: COLORS[s],
+  borderWidth: 0,
+}));
+
+chartInstance = new Chart(document.getElementById('mainChart'), {
+  type: 'bar',
+  data: { labels, datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: {
+      callbacks: {
+        label: (item) => hidden.has(item.dataset.label) ? null : `${item.dataset.label}: ${item.raw}`,
+        footer: (items) => {
+          const total = items.filter(i => !hidden.has(i.dataset.label)).reduce((s,i)=>s+i.raw,0);
+          return `Total (visible): ${total}`;
+        }
+      }
+    }},
+    scales: {
+      x: { stacked: true, ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 45 }, grid: { color: '#1e2030' } },
+      y: { stacked: true, ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#1e2030' } }
+    }
+  }
+});
+
+render();
+</script>
+</body>
+</html>
