@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Signups by Referral Source — May 23–28, 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; font-size: 14px; line-height: 1.6; }
+  .page { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { color: #5f5e5a; font-size: 13px; margin-bottom: 32px; }
+  .chart-card { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .chart-card h2 { font-size: 14px; font-weight: 500; margin-bottom: 16px; color: #444441; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5f5e5a; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .days-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .day-card { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; overflow: hidden; }
+  .day-header { padding: 14px 16px 10px; border-bottom: 0.5px solid #d3d1c7; display: flex; justify-content: space-between; align-items: baseline; }
+  .day-date { font-size: 15px; font-weight: 500; }
+  .day-total { font-size: 13px; color: #5f5e5a; }
+  .source-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 16px; border-bottom: 0.5px solid #f1efe8; }
+  .source-row:last-child { border-bottom: none; }
+  .source-name { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .source-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .source-count { font-size: 13px; font-weight: 500; color: #444441; }
+  .source-pct { font-size: 11px; color: #888780; margin-left: 4px; }
+  .other-section { background: #f9f8f5; }
+  .other-header { padding: 8px 16px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: #888780; border-bottom: 0.5px solid #d3d1c7; }
+  .other-row { display: flex; justify-content: space-between; padding: 5px 16px; border-bottom: 0.5px solid #f1efe8; }
+  .other-row:last-child { border-bottom: none; }
+  .other-code { font-size: 12px; color: #444441; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .other-count { font-size: 12px; color: #888780; }
+  .no-other { padding: 10px 16px; font-size: 12px; color: #b4b2a9; font-style: italic; }
+  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+  .stat-card { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 8px; padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: #888780; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 22px; font-weight: 500; }
+  .stat-sub { font-size: 12px; color: #5f5e5a; margin-top: 2px; }
+  @media (max-width: 600px) {
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+    .days-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>User signups by referral source</h1>
+  <p class="subtitle">PostHog · <code>user_signed_up</code> event · May 23–28, 2026 · Last 7 days</p>
+
+  <div class="summary-row">
+    <div class="stat-card">
+      <div class="stat-label">Total signups</div>
+      <div class="stat-value">866</div>
+      <div class="stat-sub">May 23–28</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Direct (no code)</div>
+      <div class="stat-value">671</div>
+      <div class="stat-sub">77.5% of total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Via referral code</div>
+      <div class="stat-value">195</div>
+      <div class="stat-sub">22.5% of total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique codes</div>
+      <div class="stat-value">60+</div>
+      <div class="stat-sub">Many single-use</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h2>Daily signups by referral source</h2>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch" style="background:#B5D4F4"></span>Direct</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#378ADD"></span>ACTION</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#534AB7"></span>PIKKIT</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#1D9E75"></span>GRINDERS</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#D85A30"></span>CHILLY</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#BA7517"></span>SGPN</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#D4537E"></span>VIBONUS</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#97C459"></span>SOCIAL</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#E24B4A"></span>HALFTHEBATTLE</span>
+      <span class="legend-item"><span class="legend-swatch" style="background:#B4B2A9"></span>Other</span>
+    </div>
+    <div style="position:relative;height:300px;">
+      <canvas id="mainChart" role="img" aria-label="Stacked bar chart of daily user signups by referral source, May 23 to May 28 2026"></canvas>
+    </div>
+  </div>
+
+  <div class="days-grid" id="daysGrid"></div>
+
+  <p style="margin-top:32px;font-size:11px;color:#b4b2a9;">Referral codes normalized: variants like PIKKIT/Pikkit/pikkit and ACTION/Action merged in the chart. Raw values shown in day breakdowns. Generated 2026-05-29.</p>
+</div>
+
+<script>
+const COLORS = {
+  'Direct':         '#B5D4F4',
+  'ACTION':         '#378ADD',
+  'PIKKIT':         '#534AB7',
+  'GRINDERS':       '#1D9E75',
+  'CHILLY':         '#D85A30',
+  'SGPN':           '#BA7517',
+  'VIBONUS':        '#D4537E',
+  'SOCIAL':         '#97C459',
+  'HALFTHEBATTLE':  '#E24B4A',
+  'Other':          '#B4B2A9',
+};
+
+const days = [
+  {
+    date: 'May 23',
+    total: 1,
+    named: [{ name: 'Direct', count: 1 }],
+    other: []
+  },
+  {
+    date: 'May 24',
+    total: 1,
+    named: [{ name: 'Direct', count: 1 }],
+    other: []
+  },
+  {
+    date: 'May 25',
+    total: 1,
+    named: [{ name: 'Direct', count: 1 }],
+    other: []
+  },
+  {
+    date: 'May 26',
+    total: 173,
+    named: [
+      { name: 'Direct',   count: 124 },
+      { name: 'PIKKIT',   count: 14 },
+      { name: 'ACTION',   count: 9 },
+      { name: 'CHILLY',   count: 6 },
+      { name: 'SGPN',     count: 4 },
+      { name: 'GRINDERS', count: 1 },
+      { name: 'VIBONUS',  count: 1 },
+      { name: 'SOCIAL',   count: 1 },
+    ],
+    other: [
+      { code: 'PROPFELLA',   count: 2 },
+      { code: 'HANDLE',      count: 1 },
+      { code: 'DOAHG1211',   count: 1 },
+      { code: 'betrsite',    count: 1 },
+      { code: 'JLIT3S74',    count: 1 },
+      { code: 'JD',          count: 1 },
+      { code: 'P8UWYI1P',    count: 1 },
+      { code: 'VWJ2kHOW',    count: 1 },
+      { code: 'How ya doin', count: 1 },
+      { code: '1234',        count: 1 },
+      { code: '5028N1NB',    count: 1 },
+      { code: 'PLAYBRACCO',  count: 1 },
+    ]
+  },
+  {
+    date: 'May 27',
+    total: 325,
+    named: [
+      { name: 'Direct',        count: 266 },
+      { name: 'ACTION',        count: 14 },
+      { name: 'PIKKIT',        count: 11 },
+      { name: 'GRINDERS',      count: 9 },
+      { name: 'VIBONUS',       count: 2 },
+      { name: 'SOCIAL',        count: 2 },
+      { name: 'HALFTHEBATTLE', count: 1 },
+      { name: 'SBCBONUS',      count: 1 },
+      { name: 'TYSB',          count: 1 },
+    ],
+    other: [
+      { code: 'H',          count: 2 },
+      { code: 'OPHDDGW2',   count: 2 },
+      { code: 'JIMMY',      count: 1 },
+      { code: 'COS',        count: 1 },
+      { code: 'JQHG6Z78',   count: 1 },
+      { code: 'WINNIBLE',   count: 1 },
+      { code: 'JUICE',      count: 1 },
+      { code: '7Y1K',       count: 1 },
+      { code: '98118',      count: 1 },
+      { code: 'MrGoodwin',  count: 1 },
+      { code: 'bracco',     count: 1 },
+      { code: 'Bracco50',   count: 1 },
+      { code: 'Nucks',      count: 1 },
+      { code: '4DB4JVN2',   count: 1 },
+      { code: 'HERNCE39',   count: 1 },
+      { code: 'Dimers',     count: 1 },
+    ]
+  },
+  {
+    date: 'May 28',
+    total: 367,
+    named: [
+      { name: 'Direct',        count: 278 },
+      { name: 'ACTION',        count: 23 },
+      { name: 'PIKKIT',        count: 12 },
+      { name: 'CHILLY',        count: 9 },
+      { name: 'HALFTHEBATTLE', count: 5 },
+      { name: 'GRINDERS',      count: 5 },
+      { name: 'VIBONUS',       count: 4 },
+      { name: 'SOCIAL',        count: 4 },
+      { name: 'SGPN',          count: 3 },
+    ],
+    other: [
+      { code: 'SBCBONUS',     count: 2 },
+      { code: 'TYSB',         count: 2 },
+      { code: 'C6BF64U3',     count: 2 },
+      { code: 'HANDLE',       count: 2 },
+      { code: 'FRDOQZZ5',    count: 1 },
+      { code: 'NEW PLAYER',   count: 1 },
+      { code: 'AQW7N2FT',     count: 1 },
+      { code: 'Playbracco',   count: 1 },
+      { code: '100MATCH',     count: 1 },
+      { code: 'BMCBETS',      count: 1 },
+      { code: '3407',         count: 1 },
+      { code: 'BANKROLLBRIAN',count: 1 },
+      { code: '5J8E5MIV',     count: 1 },
+      { code: '9819',         count: 1 },
+      { code: 'I8VOJVQW',     count: 1 },
+      { code: '183',          count: 1 },
+      { code: 'P8MWUOMR',     count: 1 },
+      { code: 'DEADSPIN',     count: 1 },
+      { code: 'quise',        count: 1 },
+      { code: '76209',        count: 1 },
+      { code: 'W6ZCAR8A',     count: 1 },
+    ]
+  }
+];
+
+const namedOrder = ['Direct','ACTION','PIKKIT','GRINDERS','CHILLY','SGPN','VIBONUS','SOCIAL','HALFTHEBATTLE'];
+const labels = days.map(d => d.date);
+
+const datasets = namedOrder.map(name => ({
+  label: name,
+  data: days.map(d => {
+    const r = d.named.find(n => n.name === name);
+    return r ? r.count : 0;
+  }),
+  backgroundColor: COLORS[name],
+  stack: 'a'
+}));
+
+datasets.push({
+  label: 'Other',
+  data: days.map(d => d.other.reduce((s, r) => s + r.count, 0)),
+  backgroundColor: COLORS['Other'],
+  stack: 'a'
+});
+
+new Chart(document.getElementById('mainChart'), {
+  type: 'bar',
+  data: { labels, datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          footer: items => 'Day total: ' + items[0].chart.data.datasets.reduce(
+            (s, ds) => s + (ds.data[items[0].dataIndex] || 0), 0
+          )
+        }
+      }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { autoSkip: false, maxRotation: 0 } },
+      y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)' } }
+    }
+  }
+});
+
+const grid = document.getElementById('daysGrid');
+
+days.forEach(day => {
+  const otherTotal = day.other.reduce((s, r) => s + r.count, 0);
+  const namedHTML = day.named.map(r => {
+    const pct = Math.round((r.count / day.total) * 100);
+    const color = COLORS[r.name] || '#ccc';
+    return `<div class="source-row">
+      <span class="source-name">
+        <span class="source-dot" style="background:${color}"></span>
+        ${r.name}
+      </span>
+      <span class="source-count">${r.count}<span class="source-pct">${pct}%</span></span>
+    </div>`;
+  }).join('');
+
+  let otherHTML = '';
+  if (day.other.length > 0) {
+    const rows = day.other.map(r =>
+      `<div class="other-row">
+        <span class="other-code">${r.code}</span>
+        <span class="other-count">${r.count}</span>
+      </div>`
+    ).join('');
+    otherHTML = `
+      <div class="other-section">
+        <div class="other-header">Other referral codes (${day.other.length} unique · ${otherTotal} signups)</div>
+        ${rows}
+      </div>`;
+  } else {
+    otherHTML = `<div class="other-section"><div class="no-other">No other codes</div></div>`;
+  }
+
+  grid.innerHTML += `
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-date">${day.date}</span>
+        <span class="day-total">${day.total} signups</span>
+      </div>
+      ${namedHTML}
+      ${otherHTML}
+    </div>`;
+});
+</script>
+</body>
+</html>
